@@ -1,9 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { profile } from "@/content/data";
 
 const PINK = "#F7A8C4";
+
+// Answers are pushed to Ashkan's phone via ntfy.sh (the page tells her so on the first screen).
+// ponytail: topic sits in the public bundle, so anyone who finds it can subscribe; move behind a relay if that matters.
+const NTFY_TOPIC = "coffee-68e434c14740464d";
+
+function notify(title: string, message: string) {
+  return fetch("https://ntfy.sh/", {
+    method: "POST",
+    keepalive: true,
+    body: JSON.stringify({ topic: NTFY_TOPIC, title, message, priority: 5 }),
+  }).then((r) => {
+    if (!r.ok) throw new Error(String(r.status));
+  });
+}
 
 type Answers = { place: string; day: string; time: string; coffee: string; note: string };
 
@@ -64,6 +78,8 @@ export default function CoffeeDate() {
     `My order: ${a.coffee}`,
     ...(a.note ? [`Also: ${a.note}`] : []),
   ].join("\n");
+  const [sent, setSent] = useState<"sending" | "sent" | "failed">("sending");
+  const notified = useRef(new Set<number>());
   const mailto = `mailto:${profile.email}?subject=${encodeURIComponent("Coffee date? Yes ☕")}&body=${encodeURIComponent(body)}`;
 
   // Each step: [emoji, question, content]. "No" answers jump to the goodbye screens at the end.
@@ -71,7 +87,10 @@ export default function CoffeeDate() {
     [
       "🎀",
       <>Hi Sana.<br />Can I ask you a few questions?</>,
-      <Btn key="s" onClick={next}>of course</Btn>,
+      <div key="s" className="flex flex-col items-center gap-4">
+        <Btn onClick={next}>of course</Btn>
+        <p className="text-sm text-[var(--muted)]">heads up: your answers go straight to Ashkan&apos;s phone 📱</p>
+      </div>,
     ],
     [
       "🤔",
@@ -133,9 +152,13 @@ export default function CoffeeDate() {
           <li>☕ {a.coffee}</li>
           {a.note && <li>💌 {a.note}</li>}
         </ul>
-        <a href={mailto} className="min-h-12 rounded-full px-7 py-3 font-medium text-[#2a1320] shadow-[0_0_40px_rgba(247,168,196,0.35)]" style={{ background: PINK }}>
-          send it to Ashkan ✉️
-        </a>
+        {sent === "failed" ? (
+          <a href={mailto} className="min-h-12 rounded-full px-7 py-3 font-medium text-[#2a1320] shadow-[0_0_40px_rgba(247,168,196,0.35)]" style={{ background: PINK }}>
+            couldn&apos;t reach his phone, send by email ✉️
+          </a>
+        ) : (
+          <p className="text-sm text-[var(--muted)]" aria-live="polite">{sent === "sent" ? "sent to Ashkan's phone ✓" : "sending to Ashkan…"}</p>
+        )}
         <p className="text-sm text-[var(--muted)]">thank you for saying yes. I&apos;m smiling like an idiot right now.</p>
       </div>,
     ],
@@ -145,6 +168,25 @@ export default function CoffeeDate() {
     [-1]: ["🌷", "Ah, he's a lucky guy. Thanks for being honest, and no hard feelings at all. Have a lovely day, Sana."],
     [-2]: ["🌷", "That's completely okay. Thank you for reading this far, and have a lovely day, Sana."],
   };
+  const last = steps.length - 1;
+  useEffect(() => {
+    if (notified.current.has(step)) return;
+    const msg: Record<number, [string, string]> = {
+      1: ["👀 Sana opened it", "She's answering your questions."],
+      2: ["🙌 No boyfriend", "She said she doesn't have one."],
+      3: ["💖 YES to coffee!", "She said yes to a coffee date."],
+      [last]: ["☕ It's a date!", body],
+      [-1]: ["🌷 She has a boyfriend", "She said yes, she has one."],
+      [-2]: ["🌷 Not really", "She said no to the coffee date."],
+    };
+    if (!msg[step]) return;
+    notified.current.add(step);
+    const done = notify(...msg[step]);
+    if (step === last) done.then(() => setSent("sent"), () => setSent("failed"));
+    else done.catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+
   const [emoji, question, content] = step < 0 ? [...goodbye[step], null] : steps[step];
   const progress = step < 0 ? 1 : step / (steps.length - 1);
 
