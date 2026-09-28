@@ -34,49 +34,40 @@ export const stats = [
 export const skillTree = [
   {
     branch: "Front-end",
-    glyph: "⚔",
     skills: ["TypeScript", "Angular", "React", "Next.js", "Svelte", "TanStack", "Redux Toolkit", "Zustand", "Tailwind CSS", "SCSS", "MUI", "Ant Design", "Storybook"],
   },
   {
     branch: "Back-end",
-    glyph: "⛨",
     skills: ["Node.js", "NestJS", "Express", "Fastify", "Go", "Gin", "Fiber", "Python", "Django", "FastAPI", ".NET", "Laravel", "REST", "GraphQL", "gRPC", "WebSockets", "Microservices"],
   },
   {
     branch: "AI sorcery",
-    glyph: "✦",
     note: "LLMs and image models, trained from scratch, fine-tuned or served privately. No uprisings so far.",
     skills: ["LLMs from scratch", "Fine-tuning", "Small specialized models", "Private LLM stacks", "RAG", "Agents", "Image generation models", "Computer vision"],
   },
   {
     branch: "Mobile",
-    glyph: "◈",
     skills: ["Flutter", "React Native", "Native Android", "Ionic", "Firebase", "Offline sync", "Push notifications"],
   },
   {
     branch: "Data",
-    glyph: "◉",
     skills: ["PostgreSQL", "MySQL", "MongoDB", "Redis", "Cassandra", "SQLite", "SQL Server", "Firestore"],
   },
   {
     branch: "Ops",
-    glyph: "⚙",
     skills: ["Docker", "Kubernetes", "GitHub Actions", "GitLab CI/CD", "Jenkins", "Nginx", "Linux"],
   },
   {
     branch: "Testing",
-    glyph: "⚗",
     skills: ["Jest", "Cypress", "Playwright", "Pest"],
   },
   {
     branch: "Worldbuilding",
-    glyph: "✺",
     note: "Code, 3D, 2D, pixels and the soundtrack. The whole game, solo.",
     skills: ["Godot", "Unity", "Unreal", "Blender", "Pixel art", "Aseprite", "Krita", "Music composition", "Ableton Live"],
   },
   {
     branch: "Artificing",
-    glyph: "⌁",
     skills: ["Embedded systems", "Image processing", "Arduino", "Raspberry Pi", "Web AR"],
   },
 ];

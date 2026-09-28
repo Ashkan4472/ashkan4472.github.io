@@ -1,79 +1,62 @@
 "use client";
 
-import { motion, useMotionValue, useSpring } from "motion/react";
 import { useRef } from "react";
 import { profile } from "@/content/data";
-import { gsap, reducedMotion, SplitText, useGSAP } from "@/lib/gsap";
+import { animate, createAnimatable, createTimeline, onScroll, onceInView, scrambleText, stagger, useAnime } from "@/lib/anim";
 import { blip } from "@/lib/sfx";
-
-function Magnetic({ children, href }: { children: React.ReactNode; href: string }) {
-  const x = useSpring(useMotionValue(0), { stiffness: 200, damping: 15 });
-  const y = useSpring(useMotionValue(0), { stiffness: 200, damping: 15 });
-  return (
-    <motion.a
-      href={href}
-      style={{ x, y }}
-      onPointerMove={(e) => {
-        if (e.pointerType !== "mouse") return;
-        const r = e.currentTarget.getBoundingClientRect();
-        x.set((e.clientX - r.left - r.width / 2) * 0.3);
-        y.set((e.clientY - r.top - r.height / 2) * 0.3);
-      }}
-      onPointerLeave={() => {
-        x.set(0);
-        y.set(0);
-      }}
-      onMouseEnter={() => blip("hover")}
-      onClick={() => blip("click")}
-      className="inline-flex min-h-14 items-center gap-3 rounded-full bg-[var(--gold)] px-8 py-4 text-lg font-medium text-[var(--bg)] shadow-[0_0_40px_var(--glow)]"
-    >
-      {children}
-    </motion.a>
-  );
-}
 
 export default function SavePoint() {
   const root = useRef<HTMLElement>(null);
+  const cta = useRef<HTMLAnchorElement>(null);
 
-  useGSAP(
-    () => {
-      if (reducedMotion()) return;
-      const split = new SplitText(".save-title", { type: "chars", charsClass: "inline-block" });
-      gsap.from(split.chars, {
-        opacity: 0,
-        yPercent: 80,
-        rotate: 8,
-        stagger: 0.03,
-        duration: 0.8,
-        ease: "expo.out",
-        scrollTrigger: { trigger: root.current, start: "top 65%" },
-      });
-      gsap.from(".save-fade", { opacity: 0, y: 16, stagger: 0.1, duration: 0.6, scrollTrigger: { trigger: root.current, start: "top 55%" } });
-      return () => split.revert();
-    },
-    { scope: root },
-  );
+  useAnime(root, () => {
+    createTimeline({ autoplay: onScroll(onceInView(".save-title")) })
+      .add(".save-title-t", { innerHTML: scrambleText(), duration: 1000 })
+      .add(".save-fade", { opacity: [0, 1], y: [14, 0], delay: stagger(90), duration: 600, ease: "out(3)" }, 300);
+
+    const magnet = createAnimatable(cta.current!, { x: 300, y: 300, ease: "out(3)" });
+    const move = (e: PointerEvent) => {
+      if (e.pointerType !== "mouse") return;
+      const r = cta.current!.getBoundingClientRect();
+      magnet.x((e.clientX - r.left - r.width / 2) * 0.3);
+      magnet.y((e.clientY - r.top - r.height / 2) * 0.3);
+    };
+    const leave = () => {
+      magnet.x(0);
+      magnet.y(0);
+    };
+    cta.current!.addEventListener("pointermove", move);
+    cta.current!.addEventListener("pointerleave", leave);
+    return () => {
+      cta.current?.removeEventListener("pointermove", move);
+      cta.current?.removeEventListener("pointerleave", leave);
+    };
+  });
 
   return (
-    <section id="save" ref={root} className="relative overflow-hidden pb-12 pt-28 sm:pt-40">
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[60vh]" style={{ background: "radial-gradient(ellipse at 50% 100%, var(--glow), transparent 70%)" }} aria-hidden />
-      <div className="relative mx-auto max-w-7xl px-4 text-center sm:px-8">
-        <p className="save-fade eyebrow mb-6">Save point · Side quests welcome</p>
-        <h2 className="save-title font-display text-[clamp(3rem,10vw,9rem)] leading-[0.9]">
-          Save your <span className="italic text-[var(--gold)]">game?</span>
+    <section id="save" ref={root} className="relative overflow-hidden pb-10 pt-28 sm:pt-36">
+      <div className="relative mx-auto max-w-6xl px-4 sm:px-8">
+        <p className="save-fade label mb-6">$ git commit -m &quot;save point&quot;</p>
+        <h2 className="save-title font-sans text-[clamp(3rem,9vw,8rem)] font-bold leading-[0.9] tracking-[-0.045em]">
+          <span className="save-title-t">Save your game</span>
+          <span className="text-[var(--acc)] glow">?</span>
         </h2>
-        <p className="save-fade mx-auto mt-6 max-w-xl text-lg text-[var(--muted)]">
+        <p className="save-fade mt-6 max-w-xl text-lg leading-relaxed text-[var(--muted)]">
           Open to collaborating on open-source projects. Bring your weirdest idea. These aren&apos;t the bugs you&apos;re looking for, but I&apos;ll fix them anyway.
         </p>
         <div className="save-fade mt-10">
-          <Magnetic href={`mailto:${profile.email}`}>
-            {profile.email}
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="M5 12h14M13 6l6 6-6 6" />
-            </svg>
-          </Magnetic>
+          <a
+            ref={cta}
+            href={`mailto:${profile.email}`}
+            onMouseEnter={() => blip("hover")}
+            onClick={() => blip("click")}
+            className="inline-flex min-h-14 items-center gap-3 rounded border border-[var(--acc)] bg-[var(--acc)] px-7 py-4 font-mono text-base font-bold text-[var(--bg)] shadow-[0_0_30px_var(--glow)]"
+          >
+            <span>$ mail {profile.email}</span>
+            <span aria-hidden>↵</span>
+          </a>
         </div>
-        <ul className="save-fade mt-10 flex flex-wrap justify-center gap-3">
+        <ul className="save-fade mt-8 flex flex-wrap gap-2">
           {profile.links.map((l) => (
             <li key={l.href}>
               <a
@@ -81,16 +64,16 @@ export default function SavePoint() {
                 target="_blank"
                 rel="noopener noreferrer"
                 onMouseEnter={() => blip("hover")}
-                className="inline-flex min-h-11 items-center rounded-full border border-[var(--line)] px-5 text-[var(--fg)] transition hover:border-[var(--gold)] hover:text-[var(--gold)]"
+                className="inline-flex min-h-11 items-center rounded border border-[var(--line)] px-4 font-mono text-sm text-[var(--fg)] transition-colors hover:border-[var(--acc)] hover:text-[var(--acc)]"
               >
-                {l.label} ↗
+                ./{l.label.toLowerCase()}
               </a>
             </li>
           ))}
         </ul>
-        <footer className="mt-32 flex flex-col items-center justify-between gap-3 border-t border-[var(--line)] pt-6 text-sm text-[var(--muted)] sm:flex-row">
-          <p className="font-display italic">Not all those who wander are lost. Some of them are just debugging.</p>
-          <p className="font-pixel text-[10px]">© {new Date().getFullYear()} Ashkan Tofangdar · ↑↑↓↓←→←→BA</p>
+        <footer className="mt-28 flex flex-col justify-between gap-3 border-t border-[var(--line)] pt-6 font-mono text-xs text-[var(--dim)] sm:flex-row">
+          <p>Not all those who wander are lost. Some of them are just debugging.</p>
+          <p>© {new Date().getFullYear()} Ashkan Tofangdar · ↑↑↓↓←→←→BA</p>
         </footer>
       </div>
     </section>

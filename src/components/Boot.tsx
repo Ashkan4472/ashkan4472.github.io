@@ -1,25 +1,31 @@
 "use client";
 
-import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
-import { reducedMotion } from "@/lib/gsap";
+import { useEffect, useRef, useState } from "react";
+import { animate, reducedMotion } from "@/lib/anim";
 
 const lines = [
-  "ASHKAN.OS  v9.0",
   "[ ok ] loading curiosity.ko",
   "[ ok ] mounting /dev/coffee",
   "[ ok ] summoning skill tree",
   "[ ok ] hiding bugs from the user",
+  "[warn] luck stat below threshold",
 ];
 
 export function booted() {
-  window.dispatchEvent(new Event("booted"));
   (window as unknown as { __booted: boolean }).__booted = true;
+  window.dispatchEvent(new Event("booted"));
+}
+
+export function whenBooted(fn: () => void) {
+  if ((window as unknown as { __booted?: boolean }).__booted) fn();
+  else window.addEventListener("booted", fn, { once: true });
+  return () => window.removeEventListener("booted", fn);
 }
 
 export default function Boot() {
   const [show, setShow] = useState(true);
   const [pct, setPct] = useState(0);
+  const root = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let seen = false;
@@ -32,71 +38,52 @@ export default function Boot() {
       return;
     }
     document.documentElement.style.overflow = "hidden";
-    const start = performance.now();
-    let raf = 0;
-    const tick = (t: number) => {
-      const p = Math.min(1, (t - start) / 1700);
-      setPct(Math.round(p * 100));
-      if (p < 1) raf = requestAnimationFrame(tick);
-      else finish();
-    };
-    const finish = () => {
-      cancelAnimationFrame(raf);
+    let done = false;
+    const counter = { v: 0 };
+    const load = animate(counter, { v: 100, duration: 1700, ease: "inOut(2)", onUpdate: () => setPct(Math.round(counter.v)), onComplete: () => finish() });
+    function finish() {
+      if (done) return;
+      done = true;
+      load.pause();
       try {
         sessionStorage.setItem("booted", "1");
       } catch {}
       document.documentElement.style.overflow = "";
-      setShow(false);
       booted();
-    };
-    raf = requestAnimationFrame(tick);
+      if (root.current)
+        animate(root.current, { translateY: "-100%", duration: 700, ease: "inOut(4)", onComplete: () => setShow(false) });
+      else setShow(false);
+    }
     const skip = () => finish();
-    window.addEventListener("keydown", skip, { once: true });
-    window.addEventListener("pointerdown", skip, { once: true });
+    addEventListener("keydown", skip, { once: true });
+    addEventListener("pointerdown", skip, { once: true });
     return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("keydown", skip);
-      window.removeEventListener("pointerdown", skip);
+      load.pause();
+      removeEventListener("keydown", skip);
+      removeEventListener("pointerdown", skip);
       document.documentElement.style.overflow = "";
     };
   }, []);
 
+  if (!show) return null;
   const visible = Math.min(lines.length, Math.floor((pct / 100) * (lines.length + 1)));
+  const blocks = Math.round(pct / 4);
 
   return (
-    <AnimatePresence>
-      {show && (
-        <motion.div
-          key="boot"
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-[var(--bg)]"
-          exit={{ clipPath: "inset(0 0 100% 0)" }}
-          initial={{ clipPath: "inset(0 0 0% 0)" }}
-          transition={{ duration: 0.8, ease: [0.76, 0, 0.24, 1] }}
-          role="status"
-          aria-label="Loading"
-        >
-          <div className="w-[min(420px,86vw)] font-mono text-sm">
-            {lines.slice(0, visible).map((l, i) => (
-              <motion.p
-                key={l}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                className={i === 0 ? "mb-3 font-pixel text-[var(--gold)]" : "text-[var(--muted)]"}
-              >
-                {l}
-              </motion.p>
-            ))}
-            <div className="mt-6 h-3 w-full border border-[var(--line)] p-[2px]">
-              <div className="stat-fill h-full" style={{ transform: `scaleX(${pct / 100})` }} />
-            </div>
-            <div className="mt-2 flex justify-between font-pixel text-[11px] text-[var(--muted)]">
-              <span>{pct === 42 ? "42. the answer." : "loading"}</span>
-              <span>{pct}%</span>
-            </div>
-            <p className="mt-8 text-center font-pixel text-[11px] text-[var(--muted)] opacity-70">press any key to skip</p>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <div ref={root} className="fixed inset-0 z-[100] flex items-center justify-center bg-[var(--bg)]" role="status" aria-label="Loading">
+      <div className="w-[min(460px,88vw)] font-mono text-sm">
+        <p className="mb-4 text-[var(--acc)] glow">ASHKAN.OS v9.0 · tty1</p>
+        {lines.slice(0, visible).map((l) => (
+          <p key={l} className={l.startsWith("[warn]") ? "text-[var(--warn)]" : "text-[var(--muted)]"}>
+            {l}
+          </p>
+        ))}
+        <p className="mt-6 whitespace-pre text-[var(--acc)]">
+          [{"█".repeat(blocks)}
+          <span className="text-[var(--dim)]">{"░".repeat(25 - blocks)}</span>] {String(pct).padStart(3, " ")}%
+        </p>
+        <p className="mt-2 text-xs text-[var(--dim)]">{pct === 42 ? "42. the answer." : "press any key to skip"}</p>
+      </div>
+    </div>
   );
 }

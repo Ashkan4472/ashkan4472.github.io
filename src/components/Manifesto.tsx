@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { gsap, reducedMotion, SplitText, useGSAP } from "@/lib/gsap";
+import { animate, onScroll, splitText, stagger, useAnime } from "@/lib/anim";
 
 const lines = [
   "My favorite moment is right before something exists.",
@@ -12,39 +12,40 @@ const lines = [
 export default function Manifesto() {
   const root = useRef<HTMLElement>(null);
 
-  useGSAP(
-    () => {
-      if (reducedMotion()) return;
-      const split = new SplitText(".mf-line", { type: "words" });
-      gsap.set(split.words, { opacity: 0.12 });
-      gsap
-        .timeline({
-          scrollTrigger: { trigger: root.current, start: "top top", end: "+=180%", scrub: 0.8, pin: true },
-        })
-        .to(split.words, { opacity: 1, stagger: 0.1, ease: "none" })
-        .to(".mf-sig", { opacity: 1, y: 0, duration: 1 }, "-=0.5");
-      return () => split.revert();
-    },
-    { scope: root },
-  );
+  useAnime(root, () => {
+    const words = lines.flatMap((_, i) => splitText(`.mf-${i}`, { words: true }).words);
+    animate(words, {
+      opacity: [0.1, 1],
+      delay: stagger(40),
+      ease: "linear",
+      autoplay: onScroll({ target: root.current!, enter: "top top", leave: "bottom bottom", sync: 0.3 }),
+    });
+    animate(".mf-sig", {
+      opacity: [{ from: 0, to: 0, duration: 700 }, { to: 1, duration: 300 }],
+      ease: "linear",
+      autoplay: onScroll({ target: root.current!, enter: "top top", leave: "bottom bottom", sync: 0.3 }),
+    });
+  });
 
   return (
-    <section id="manifesto" ref={root} className="relative flex min-h-[100svh] items-center">
-      <div className="mx-auto w-full max-w-5xl px-4 sm:px-8">
-        <p className="eyebrow mb-10">Chapter 0 · The lore</p>
-        <div className="space-y-8">
-          {lines.map((l, i) => (
-            <p
-              key={i}
-              className={`mf-line font-display leading-[1.08] tracking-[-0.01em] ${i === 1 ? "text-[clamp(1.8rem,4.6vw,3.8rem)] italic" : "text-[clamp(2rem,5.4vw,4.4rem)]"}`}
-            >
-              {l}
-            </p>
-          ))}
+    <section id="manifesto" ref={root} className="relative h-[260vh] motion-reduce:h-auto">
+      <div className="sticky top-0 flex min-h-[100svh] items-center motion-reduce:static">
+        <div className="mx-auto w-full max-w-5xl px-4 sm:px-8">
+          <p className="label mb-10">$ cat lore.txt</p>
+          <div className="space-y-8">
+            {lines.map((l, i) => (
+              <p
+                key={i}
+                className={`mf-${i} font-sans font-medium leading-[1.1] tracking-[-0.02em] ${i === 1 ? "text-[clamp(1.6rem,4vw,3.3rem)] text-[var(--acc)]" : "text-[clamp(1.9rem,4.8vw,4rem)]"}`}
+              >
+                {l}
+              </p>
+            ))}
+          </div>
+          <p className="mf-sig mt-12 max-w-xl font-mono text-sm leading-relaxed text-[var(--muted)]">
+            <span className="text-[var(--dim)]"># </span>I like simple things done well, code that reads like prose, and handing the map to whoever comes next. That&apos;s why I&apos;ve translated a few books along the way.
+          </p>
         </div>
-        <p className="mf-sig mt-12 max-w-xl translate-y-4 text-[var(--muted)] opacity-0 motion-reduce:translate-y-0 motion-reduce:opacity-100">
-          I like simple things done well, code that reads like prose, and handing the map to whoever comes next. That&apos;s why I&apos;ve translated a few books along the way.
-        </p>
       </div>
     </section>
   );

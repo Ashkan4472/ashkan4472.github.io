@@ -1,131 +1,91 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { gsap, reducedMotion, SplitText, useGSAP } from "@/lib/gsap";
+import { useRef } from "react";
+import { animate, createTimeline, onScroll, scrambleText, stagger, useAnime, utils } from "@/lib/anim";
+import { whenBooted } from "./Boot";
 
-function Starfield() {
-  const ref = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = ref.current!;
-    const c = canvas.getContext("2d")!;
-    const still = reducedMotion();
-    let w = 0, h = 0, raf = 0;
-    let mx = 0, my = 0;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const stars = Array.from({ length: 180 }, () => ({
-      x: Math.random(),
-      y: Math.random(),
-      z: Math.random() * 0.8 + 0.2,
-      tw: Math.random() * Math.PI * 2,
-    }));
-
-    const resize = () => {
-      w = canvas.clientWidth;
-      h = canvas.clientHeight;
-      canvas.width = w * dpr;
-      canvas.height = h * dpr;
-      c.setTransform(dpr, 0, 0, dpr, 0, 0);
-    };
-    const move = (e: PointerEvent) => {
-      mx = e.clientX / window.innerWidth - 0.5;
-      my = e.clientY / window.innerHeight - 0.5;
-    };
-
-    const draw = (t: number) => {
-      const s = getComputedStyle(document.documentElement);
-      const fg = s.getPropertyValue("--fg").trim();
-      const gold = s.getPropertyValue("--gold").trim();
-      c.clearRect(0, 0, w, h);
-      for (const st of stars) {
-        if (!still) st.y -= 0.00004 * st.z * 16;
-        if (st.y < 0) st.y = 1;
-        const x = st.x * w + mx * 40 * st.z;
-        const y = st.y * h + my * 40 * st.z;
-        const a = 0.25 + 0.55 * st.z * (0.6 + 0.4 * Math.sin(t / 700 + st.tw));
-        c.globalAlpha = a;
-        c.fillStyle = st.z > 0.93 ? gold : fg;
-        const size = st.z * 1.8;
-        c.fillRect(x, y, size, size);
-      }
-      c.globalAlpha = 1;
-      if (!still) raf = requestAnimationFrame(draw);
-    };
-
-    resize();
-    window.addEventListener("resize", resize);
-    window.addEventListener("pointermove", move);
-    raf = requestAnimationFrame(draw);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", resize);
-      window.removeEventListener("pointermove", move);
-    };
-  }, []);
-
-  return <canvas ref={ref} className="absolute inset-0 h-full w-full" aria-hidden />;
-}
+const COLS = 22;
+const ROWS = 13;
 
 export default function Hero() {
   const root = useRef<HTMLElement>(null);
 
-  useGSAP(
-    () => {
-      if (reducedMotion()) return;
-      const split = new SplitText(".hero-title", { type: "chars,words", charsClass: "inline-block" });
-      const tl = gsap.timeline({ paused: true, defaults: { ease: "expo.out" } });
-      tl.from(split.chars, { yPercent: 110, rotateX: -60, opacity: 0, duration: 1.1, stagger: 0.035 })
-        .from(".hero-fade", { y: 16, opacity: 0, duration: 0.8, stagger: 0.12 }, "-=0.7")
-        .from(".hero-line", { scaleX: 0, duration: 1, ease: "power3.inOut" }, "<");
-
-      const play = () => tl.play();
-      if ((window as unknown as { __booted?: boolean }).__booted) play();
-      else window.addEventListener("booted", play, { once: true });
-
-      gsap.to(".hero-inner", {
-        yPercent: -18,
-        opacity: 0,
-        scale: 0.94,
-        ease: "none",
-        scrollTrigger: { trigger: root.current, start: "top top", end: "bottom top", scrub: true },
+  useAnime(root, () => {
+    const ripple = (from: number) =>
+      animate(".dot", {
+        scale: [{ to: 2.6, duration: 260 }, { to: 1, duration: 700 }],
+        opacity: [{ to: 1, duration: 260 }, { to: 0.35, duration: 700 }],
+        backgroundColor: [{ to: "var(--acc)", duration: 260 }, { to: "var(--dim)", duration: 700 }],
+        delay: stagger(45, { grid: [COLS, ROWS], from }),
+        ease: "out(3)",
       });
-      return () => {
-        window.removeEventListener("booted", play);
-        split.revert();
-      };
-    },
-    { scope: root },
-  );
+
+    const intro = createTimeline({ autoplay: false, defaults: { ease: "out(4)" } })
+      .add(".dot", { opacity: [0, 0.35], scale: [0, 1], delay: stagger(18, { grid: [COLS, ROWS], from: "center" }), duration: 600 })
+      .add(".hero-cmd", { innerHTML: scrambleText({ chars: "01" }), duration: 700 }, 0)
+      .add(".hero-title-line", { opacity: [0, 1], duration: 10 }, 200)
+      .add(".hero-title-line", { innerHTML: scrambleText({ chars: "!<>-_\\/[]{}=+*^?#" }), duration: 1100, delay: stagger(180) }, 200)
+      .add(".hero-fade", { opacity: [0, 1], y: [14, 0], delay: stagger(100), duration: 700 }, 900)
+      .call(() => ripple(Math.floor((COLS * ROWS) / 2)), 1200);
+
+    const off = whenBooted(() => intro.play());
+    const loop = setInterval(() => ripple(utils.random(0, COLS * ROWS - 1)), 4200);
+
+    const click = (e: Event) => {
+      const i = [...root.current!.querySelectorAll(".dot")].indexOf(e.target as Element);
+      ripple(i >= 0 ? i : utils.random(0, COLS * ROWS - 1));
+    };
+    root.current!.querySelector(".dots")!.addEventListener("pointerdown", click);
+
+    animate(".hero-inner", {
+      opacity: [1, 0],
+      y: [0, -120],
+      ease: "linear",
+      autoplay: onScroll({ target: root.current!, enter: "top top", leave: "top bottom", sync: true }),
+    });
+
+    return () => {
+      off();
+      clearInterval(loop);
+    };
+  });
 
   return (
     <section id="top" ref={root} className="relative flex min-h-[100svh] items-center overflow-hidden">
-      <Starfield />
       <div
-        className="pointer-events-none absolute left-1/2 top-1/2 h-[70vmin] w-[70vmin] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
-        style={{ background: "radial-gradient(circle, var(--glow), transparent 65%)" }}
+        className="dots absolute right-[-4%] top-1/2 grid -translate-y-1/2 cursor-crosshair gap-[clamp(14px,2.2vw,30px)] opacity-80 max-lg:right-[-40%] max-lg:opacity-50"
+        style={{ gridTemplateColumns: `repeat(${COLS}, 4px)` }}
         aria-hidden
-      />
-      <div className="hero-inner relative mx-auto w-full max-w-7xl px-4 pt-24 sm:px-8">
-        <p className="hero-fade eyebrow mb-6">Player one · Level 9+ · Class: Software Developer</p>
-        <h1 className="hero-title font-display text-[clamp(3.6rem,13vw,11.5rem)] leading-[0.88] tracking-[-0.02em]" style={{ perspective: 600 }}>
-          <span className="block italic text-[var(--muted)]">Software</span>
-          <span className="block">Developer.</span>
+      >
+        {Array.from({ length: COLS * ROWS }, (_, i) => (
+          <span key={i} className="dot" />
+        ))}
+      </div>
+      <div className="hero-inner relative mx-auto w-full max-w-6xl px-4 pt-20 sm:px-8">
+        <p className="font-mono text-sm text-[var(--muted)]">
+          <span className="text-[var(--acc)]">ashkan@is-a-dev</span> <span className="text-[var(--info)]">~</span> %{" "}
+          <span className="hero-cmd text-[var(--fg)]">whoami</span>
+        </p>
+        <h1 className="mt-6 font-sans text-[clamp(3.2rem,11vw,9.5rem)] font-bold leading-[0.9] tracking-[-0.04em]">
+          <span className="hero-title-line block text-[var(--dim)]">Software</span>
+          <span className="block">
+            <span className="hero-title-line">Developer</span>
+            <span className="text-[var(--acc)] glow">.</span>
+          </span>
         </h1>
-        <div className="hero-line mt-8 h-px w-full origin-left bg-[var(--line)]" />
-        <div className="mt-6 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-          <p className="hero-fade max-w-md text-lg text-[var(--muted)]">
-            I&apos;m <span className="text-[var(--fg)]">Ashkan Tofangdar</span>. Always have been one. Always will be. I build the things that don&apos;t exist yet.
+        <div className="mt-10 flex max-w-2xl flex-col gap-6">
+          <p className="hero-fade text-lg leading-relaxed text-[var(--muted)] sm:text-xl">
+            I&apos;m <span className="text-[var(--fg)]">Ashkan Tofangdar</span>. Always have been a software developer, always will be. I build the things that don&apos;t exist yet.
           </p>
-          <div className="hero-fade flex items-center gap-3">
-            <span className="rounded-md border border-[var(--gold)] px-3 py-1.5 font-pixel text-xs text-[var(--gold)]">Don&apos;t Panic</span>
-            <span className="hidden font-mono text-xs text-[var(--muted)] sm:inline">press <kbd className="rounded border border-[var(--line)] px-1.5">~</kbd> for a terminal</span>
+          <div className="hero-fade flex flex-wrap items-center gap-3 font-mono text-xs">
+            <span className="rounded border border-[var(--acc)] px-2.5 py-1.5 text-[var(--acc)] glow">DON&apos;T PANIC</span>
+            <span className="hidden text-[var(--dim)] sm:inline">
+              press <kbd className="rounded border border-[var(--line)] px-1.5 text-[var(--fg)]">~</kbd> for a shell · click the dots
+            </span>
           </div>
         </div>
-        <a href="#manifesto" className="hero-fade mt-16 inline-flex items-center gap-3 font-pixel text-[11px] text-[var(--muted)] hover:text-[var(--gold)]">
-          <span className="relative block h-9 w-5 rounded-full border border-current">
-            <span className="absolute left-1/2 top-2 h-1.5 w-1 -translate-x-1/2 animate-bounce rounded-full bg-current" />
-          </span>
-          scroll to start the quest
+        <a href="#manifesto" className="hero-fade mt-16 inline-block font-mono text-xs text-[var(--dim)] hover:text-[var(--acc)]">
+          <span className="cursor">cd ./quest</span>
         </a>
       </div>
     </section>

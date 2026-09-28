@@ -2,57 +2,44 @@
 
 import { useRef } from "react";
 import { skillTree } from "@/content/data";
-import { gsap, reducedMotion, useGSAP } from "@/lib/gsap";
+import { spring, createTimeline, onScroll, onceInView, stagger, svg, useAnime } from "@/lib/anim";
 import { blip } from "@/lib/sfx";
 import { SectionHead } from "./Sheet";
+
+const pop = spring({ stiffness: 260, damping: 12 });
 
 export default function SkillTree() {
   const root = useRef<HTMLElement>(null);
 
-  useGSAP(
-    () => {
-      if (reducedMotion()) return;
-      gsap.utils.toArray<HTMLElement>(".branch").forEach((b) => {
-        const tl = gsap.timeline({ scrollTrigger: { trigger: b, start: "top 85%" } });
-        tl.from(b, { opacity: 0, y: 30, duration: 0.6, ease: "power3.out" })
-          .from(b.querySelector(".rune-wrap"), { scale: 0, rotate: -180, duration: 0.7, ease: "back.out(2)" }, "<0.1")
-          .from(b.querySelector(".branch-line"), { scaleY: 0, duration: 0.5, ease: "power2.out" }, "<0.2")
-          .from(b.querySelectorAll(".node"), { opacity: 0, scale: 0.6, y: 8, stagger: 0.025, duration: 0.35, ease: "back.out(2)" }, "<0.1");
-      });
-    },
-    { scope: root },
-  );
+  useAnime(root, () => {
+    root.current!.querySelectorAll<HTMLElement>(".branch").forEach((b) => {
+      createTimeline({ autoplay: onScroll(onceInView(b)) })
+        .add(b, { opacity: [0, 1], y: [24, 0], duration: 500, ease: "out(3)" })
+        .add(svg.createDrawable(b.querySelectorAll(".trace")), { draw: ["0 0", "0 1"], duration: 700, ease: "inOut(3)" }, 100)
+        .add(b.querySelectorAll(".node"), { scale: [0, 1], opacity: [0, 1], ease: pop, delay: stagger(22) }, 350);
+    });
+  });
 
   return (
     <section id="skills" ref={root} className="relative py-24 sm:py-28">
-      <div className="mx-auto max-w-7xl px-4 sm:px-8">
-        <SectionHead eyebrow="Chapter 2 · Skill tree" title="Every branch, unlocked." sub="Nine schools, one player. Hover a node to feel its power." />
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mx-auto max-w-6xl px-4 sm:px-8">
+        <SectionHead cmd="tree ./skills --depth 2" title="Every branch, unlocked." sub="Nine schools, one player." />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {skillTree.map((b) => (
-            <article
-              key={b.branch}
-              onMouseEnter={() => blip("hover")}
-              className="branch panel group relative overflow-hidden p-6 transition-colors duration-300 hover:border-[var(--gold)]"
-            >
-              <div
-                className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-100"
-                style={{ background: "var(--glow)" }}
-                aria-hidden
-              />
-              <div className="relative flex items-start gap-4">
-                <div className="flex flex-col items-center">
-                  <span className="rune-wrap block"><span className="rune grid h-12 w-12 place-items-center rounded-full border border-[var(--gold)] text-xl text-[var(--gold)] transition-transform duration-500 group-hover:rotate-[360deg]" aria-hidden>
-                    {b.glyph}
-                  </span></span>
-                  <span className="branch-line mt-2 h-10 w-px origin-top bg-gradient-to-b from-[var(--gold)] to-transparent" aria-hidden />
-                </div>
-                <div className="min-w-0">
-                  <h3 className="text-xl font-medium">{b.branch}</h3>
-                  <p className="font-pixel text-[11px] text-[var(--muted)]">{b.skills.length} nodes unlocked</p>
-                </div>
+            <article key={b.branch} onMouseEnter={() => blip("hover")} className="branch panel group relative overflow-hidden p-5 transition-colors hover:border-[var(--acc)]">
+              <svg className="pointer-events-none absolute inset-0 h-full w-full" preserveAspectRatio="none" viewBox="0 0 100 100" aria-hidden>
+                <path className="trace" d="M0 0 H100" stroke="var(--acc)" strokeWidth="1.2" vectorEffect="non-scaling-stroke" fill="none" />
+                <path className="trace" d="M0 0 V100" stroke="var(--acc)" strokeWidth="1.2" vectorEffect="non-scaling-stroke" fill="none" opacity="0.5" />
+              </svg>
+              <div className="mb-4 flex items-baseline justify-between font-mono">
+                <h3 className="text-base font-bold text-[var(--fg)] group-hover:text-[var(--acc)]">
+                  <span className="text-[var(--dim)]">├─ </span>
+                  {b.branch.toLowerCase().replace(/ /g, "_")}/
+                </h3>
+                <span className="text-xs text-[var(--dim)]">{b.skills.length} nodes</span>
               </div>
-              {b.note && <p className="relative mb-4 text-sm text-[var(--muted)]">{b.note}</p>}
-              <ul className="relative flex flex-wrap gap-2">
+              {b.note && <p className="mb-4 text-sm leading-relaxed text-[var(--muted)]">{b.note}</p>}
+              <ul className="flex flex-wrap gap-1.5">
                 {b.skills.map((s) => (
                   <li key={s} className="node">
                     <span className="chip">{s}</span>

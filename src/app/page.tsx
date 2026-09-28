@@ -4,19 +4,19 @@ import Eggs from "@/components/Eggs";
 import Hero from "@/components/Hero";
 import Manifesto from "@/components/Manifesto";
 import QuestLog from "@/components/QuestLog";
-import Reveals from "@/components/Reveals";
 import SavePoint from "@/components/SavePoint";
 import Sheet from "@/components/Sheet";
+import SideRail from "@/components/SideRail";
 import SkillTree from "@/components/SkillTree";
-import TopBar from "@/components/TopBar";
+import Toaster from "@/components/Toast";
 import Trophies from "@/components/Trophies";
 
 export default function Home() {
   return (
     <>
       <Boot />
-      <TopBar />
-      <main>
+      <SideRail />
+      <main className="lg:pl-40">
         <Hero />
         <Manifesto />
         <Sheet />
@@ -26,7 +26,7 @@ export default function Home() {
         <Camp />
         <SavePoint />
       </main>
-      <Reveals />
+      <Toaster />
       <Eggs />
     </>
   );

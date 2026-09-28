@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import { inventory, training } from "@/content/data";
-import { gsap, reducedMotion, useGSAP } from "@/lib/gsap";
+import { animate, spring, onScroll, onceInView, stagger, useAnime } from "@/lib/anim";
 import { SectionHead } from "./Sheet";
 
 const icons: Record<string, string> = {
@@ -15,25 +15,28 @@ const icons: Record<string, string> = {
 export default function Camp() {
   const root = useRef<HTMLElement>(null);
 
-  useGSAP(
-    () => {
-      if (reducedMotion()) return;
-      gsap.from(".slot", { opacity: 0, scale: 0.8, stagger: 0.08, duration: 0.5, ease: "back.out(2)", scrollTrigger: { trigger: ".slots", start: "top 85%" } });
-    },
-    { scope: root },
-  );
+  useAnime(root, () => {
+    animate(".edu", { opacity: [0, 1], x: [-16, 0], delay: stagger(120), duration: 600, ease: "out(3)", autoplay: onScroll(onceInView(".edus")) });
+    animate(".slot", {
+      opacity: [0, 1],
+      scale: [0.8, 1],
+      delay: stagger(80, { grid: [2, 2], from: "first" }),
+      ease: spring({ stiffness: 220, damping: 13 }),
+      autoplay: onScroll(onceInView(".slots")),
+    });
+  });
 
   return (
     <section id="camp" ref={root} className="relative py-24 sm:py-28">
-      <div className="mx-auto grid max-w-7xl gap-16 px-4 sm:px-8 lg:grid-cols-2">
+      <div className="mx-auto grid max-w-6xl gap-16 px-4 sm:px-8 lg:grid-cols-2">
         <div>
-          <SectionHead eyebrow="Chapter 5 · Training grounds" title="Where the XP started." />
-          <ol className="relative space-y-6 border-l border-[var(--line)] pl-6">
+          <SectionHead cmd="history | grep school" title="Where the XP started." />
+          <ol className="edus relative space-y-6 border-l border-[var(--line)] pl-6">
             {training.map((t) => (
-              <li key={t.school} className="reveal relative">
-                <span className="absolute -left-[31px] top-1.5 h-3 w-3 rotate-45 border border-[var(--gold)] bg-[var(--bg)]" aria-hidden />
-                <p className="font-mono text-xs text-[var(--muted)]">{t.when}</p>
-                <h3 className="mt-1 text-xl font-medium">{t.school}</h3>
+              <li key={t.school} className="edu relative">
+                <span className="absolute -left-[29px] top-1.5 h-2.5 w-2.5 bg-[var(--acc)]" aria-hidden />
+                <p className="font-mono text-xs text-[var(--dim)]">{t.when}</p>
+                <h3 className="mt-1 text-xl font-bold tracking-[-0.02em]">{t.school}</h3>
                 <p className="text-[var(--muted)]">
                   {t.degree} · {t.note}
                 </p>
@@ -42,18 +45,16 @@ export default function Camp() {
           </ol>
         </div>
         <div>
-          <SectionHead eyebrow="Inventory" title="Never leaves camp without." />
-          <ul className="slots grid grid-cols-2 gap-4">
+          <SectionHead cmd="ls ~/inventory" title="Never leaves camp without." />
+          <ul className="slots grid grid-cols-2 gap-3">
             {inventory.map((it) => (
-              <li key={it.item} className="slot panel group relative min-h-44 p-5 transition-colors hover:border-[var(--gold)]">
-                <span className="absolute right-4 top-3 font-pixel text-lg text-[var(--gold)]">×{it.qty}</span>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--muted)] transition duration-300 group-hover:-translate-y-1 group-hover:text-[var(--gold)]" aria-hidden>
+              <li key={it.item} className="slot panel group relative p-5 transition-colors hover:border-[var(--acc)]">
+                <span className="absolute right-4 top-4 font-mono text-sm text-[var(--acc)]">×{it.qty}</span>
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className="text-[var(--dim)] transition-colors group-hover:text-[var(--acc)]" aria-hidden>
                   <path d={icons[it.item]} />
                 </svg>
-                <div className="mt-10 flex flex-col justify-end">
-                  <p className="font-display text-2xl leading-tight sm:text-3xl">{it.item}</p>
-                  <p className="mt-1 font-mono text-xs text-[var(--muted)]">{it.note}</p>
-                </div>
+                <p className="mt-8 text-lg font-bold leading-tight tracking-[-0.02em] sm:text-xl">{it.item}</p>
+                <p className="mt-1 font-mono text-xs text-[var(--dim)]">{it.note}</p>
               </li>
             ))}
           </ul>
