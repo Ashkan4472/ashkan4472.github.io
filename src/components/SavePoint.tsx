@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import { profile } from "@/content/data";
-import { animate, createAnimatable, createTimeline, onScroll, onceInView, scrambleText, stagger, useAnime } from "@/lib/anim";
+import { createAnimatable, createTimeline, onScroll, onceInView, scrambleText, stagger, useAnime } from "@/lib/anim";
 import { blip } from "@/lib/sfx";
 
 export default function SavePoint() {
