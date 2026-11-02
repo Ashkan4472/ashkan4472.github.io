@@ -6,7 +6,7 @@ export const profile = {
   links: [
     { label: "GitHub", href: "https://github.com/Ashkan4472" },
     { label: "LinkedIn", href: "https://www.linkedin.com/in/ashkan-tofangdar/" },
-    { label: "Resume", href: "https://rxresu.me/ashkan4472/full-stack-resume" },
+    { label: "Resume", href: "https://rxresu.me/ashkan4472/ashkan-tofangdar-full-stack" },
     { label: "Instagram", href: "https://instagram.com/ashk.tr" },
   ],
 };
@@ -88,37 +88,39 @@ export const quests: Quest[] = [
     role: "Senior Front-End Developer",
     from: "06/2026",
     to: "Present",
+    where: "Tehran, Iran",
     url: "https://bugloos.nl",
     loot: [
       "Leading front-end development and maintaining the Angular codebase",
-      "Working closely with AI-driven tools to ship features faster",
-      "Keeping the apps healthy through refactoring and optimization",
+      "Using AI coding tools day to day to ship features and releases faster",
+      "Keeping the apps healthy through refactoring, performance work and maintenance",
     ],
   },
   {
     company: "Forbix",
-    role: "Senior Frontend Developer",
+    role: "Senior Front-End Developer",
     from: "01/2025",
     to: "02/2026",
     where: "Tehran, Iran",
     url: "https://www.forbix.ir",
     loot: [
-      "Redesigned the whole web app from the new UI/UX designs",
-      "Cut load times by 75% with on-demand loading, caching and smarter data fetching",
-      "Built internal tooling for large dynamic forms with TanStack Form",
+      "Rebuilt the whole web app from the new UI/UX designs",
+      "Cut load times by 75% with TanStack Query, lazy loading and heavy caching",
+      "Worked with the backend team on API contracts and real-time data",
+      "Built an internal tool for large dynamic forms with TanStack Form",
     ],
   },
   {
     company: "BerryOnMars",
-    role: "Senior Software Developer",
+    role: "Senior Full-Stack Developer",
     from: "06/2023",
     to: "01/2025",
     where: "Germany",
     url: "https://berryonmars.com",
     loot: [
-      "Led Angular, React and Next.js apps to a 60% boost in performance and engagement",
-      "Designed AI systems that automated repetitive team work",
-      "Ran code reviews, unit tests and end-to-end tests",
+      "Led Angular, React and Next.js apps to a 60% better experience, for devs and users",
+      "Built AI automations for the team and AI-driven features for users",
+      "Reviewed code, coached teammates and wrote unit and end-to-end tests",
     ],
   },
   {
@@ -127,9 +129,10 @@ export const quests: Quest[] = [
     from: "05/2020",
     to: "05/2023",
     loot: [
-      "Designed and built a mobile app used by 80,000+ people",
-      "Built the REST and GraphQL APIs behind it",
-      "Cut time-to-market by 20% with Agile processes",
+      "Co-founded the company and led a mobile app to 80,000+ users",
+      "Built and ran the REST and GraphQL APIs behind it",
+      "Cut time-to-market by 20% with Agile practices",
+      "Mentored 50+ junior developers and interns",
     ],
   },
   {
@@ -138,8 +141,8 @@ export const quests: Quest[] = [
     from: "03/2021",
     to: "03/2023",
     loot: [
-      "Designed a multi-tier architecture for a large-scale web app",
-      "Wrote the coding standards and architecture docs",
+      "Designed a multi-tier architecture for a large-scale web app and a shared one across a product suite",
+      "Wrote the coding standards and architecture docs, and mentored junior engineers",
     ],
   },
   {
@@ -148,8 +151,8 @@ export const quests: Quest[] = [
     from: "03/2021",
     to: "11/2022",
     loot: [
-      "Advised multiple software projects and migrated legacy systems",
-      "Planned how new technology fits into existing systems",
+      "Advised several software projects on technical decisions and troubleshooting",
+      "Migrated legacy systems to modern platforms and handled server and network setup",
     ],
   },
   {
@@ -174,13 +177,14 @@ export const quests: Quest[] = [
   },
   {
     company: "Swing",
-    role: "Full Stack Developer",
+    role: "Full-Stack Developer",
     from: "05/2017",
     to: "08/2020",
     loot: [
       "Built web apps with Angular, React, SailsJS and NestJS",
-      "Built secure backends in Node.js and Go on MongoDB, PostgreSQL and Redis",
-      "Added real-time features with WebSockets",
+      "Built backends in Node.js on MongoDB, PostgreSQL and Redis",
+      "Shipped REST and GraphQL APIs and real-time features over WebSockets",
+      "Helped migrate legacy systems to modern architectures",
     ],
   },
 ];
@@ -189,13 +193,13 @@ export const achievements = [
   {
     title: "Best Paper & Presentation",
     detail: "Improving Attention Stand-alone Process Program (IASPP) with Artificial Intelligence (AI)",
-    meta: "Global Interdisciplinary Green Cities Conference · University of Augsburg · 2023",
+    meta: "Global Interdisciplinary Green Cities Conference · University of Augsburg · 06/2023",
     rarity: "Legendary",
   },
   {
     title: "8th place",
-    detail: "Sharif Mobile Programming Marathon (MPM 8). Scored 16.18 against a winning 16.6.",
-    meta: "Sharif University · 2020",
+    detail: "Sharif Mobile Programming Marathon (MPM 8). Scored 16.18 against a winning 16.6 after three rounds of judging.",
+    meta: "Sharif University · 10/2020",
     rarity: "Epic",
   },
   {
@@ -221,7 +225,7 @@ export const achievements = [
 export const artifacts = [
   {
     name: "ESR diagnostic machine",
-    detail: "An Erythrocyte Sedimentation Rate machine for hospitals and labs. It runs a custom operating system, embedded systems and image processing.",
+    detail: "An Erythrocyte Sedimentation Rate machine for hospitals and labs. Built on ESP32 and Raspberry Pi, with a custom operating system for medical compliance and image processing for accurate readings.",
   },
   {
     name: "Augmented reality cards",
